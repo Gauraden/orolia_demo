@@ -1,5 +1,8 @@
 #include "collector.hpp"
 
+Collector::Collector() {
+}
+
 void Collector::UseCompressor(Compressor *ptr) {
   _comp.reset(ptr);
 }
@@ -18,4 +21,30 @@ bool Collector::GetDataHeader(VoidDataSource::Header *out) const {
   }
   *out = _source->GetHeader();
   return true;
+}
+
+bool Collector::Begin() {
+  return _source->OccupySource();
+}
+
+bool Collector::FetchAllRecords() {
+  VoidDataSource::Record rec;
+  bool push_ok = true;
+  while (_source->GetRecord(&rec) && push_ok) {
+    push_ok = _comp->PushRecord(rec);
+  }
+  return push_ok && _source->GetMessage().empty();
+}
+
+void Collector::End() {
+  _source->ReleaseSource();
+}
+
+std::string Collector::GetErrorMessage() const {
+  auto kSrcMessage  = _source->GetMessage();
+  auto kCompMessage = _comp->GetMessage();
+  if (not kSrcMessage.empty()) {
+    return kSrcMessage;   
+  }
+  return kCompMessage;
 }

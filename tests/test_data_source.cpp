@@ -81,10 +81,13 @@ BOOST_AUTO_TEST_CASE(VoidDataSourceReadRecordFailTest) {
     << "0.0000000000000e+000 9.8243659989561e+003" << std::endl
     << "3.233428900a000e-001 1.0000635974181e+007" << std::endl;
   VoidDataSource::Record rec;
+  // first row
   BOOST_CHECK(src.GetRecord(&rec));
   BOOST_CHECK(rec.time - 0.0000000000000e+000 < 0.0000000000001e+000);
   BOOST_CHECK(rec.value - 9.8243659989561e+003 < 0.0000000000001e+003);
+  // second row. invalid time
   BOOST_CHECK(not src.GetRecord(&rec));
+  // no third row
   BOOST_CHECK(not src.GetRecord(&rec));
 }
 

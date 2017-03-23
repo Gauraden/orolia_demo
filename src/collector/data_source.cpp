@@ -3,11 +3,14 @@
 #include <list>
 #include <regex>
 #include <cmath>
+#include <boost/lexical_cast.hpp>
 
 // class VoidDataSource
 VoidDataSource::VoidDataSource()
     : _occupied(false),
-      _header(new Header()) {
+      _header(new Header()),
+      _rows_amount(0),
+      _prev_time_label(std::nan("")) {
 }
 
 VoidDataSource::~VoidDataSource() {
@@ -46,7 +49,7 @@ void CreateFieldsHandlers(Field::List *list) {
       out->type_of_measurement = m[0];
     }
   );
-  list->emplace_back("\\w{3,3} \\w{3,3} \\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2} \\d{4,4}",
+  list->emplace_back("\\w{3,4} \\w{3,4} \\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2} \\d{4,4}",
     [](const std::smatch &m, VoidDataSource::Header *out) {
       out->time_of_start = m[0];
     }
@@ -88,7 +91,7 @@ bool VoidDataSource::OccupySource() {
   Field::List fields;
   CreateFieldsHandlers(&fields);
   // reading header
-  while (GetLine(_line, kLineSize)) {
+  while (fields.size() > 0 && GetLine(_line, kLineSize)) {
     if (_line[0] != '#') {
       break;
     }
@@ -98,11 +101,16 @@ bool VoidDataSource::OccupySource() {
       if (std::regex_search(t_str, m, fit->regex)) {
         fit->handler(m, _header);
         fields.erase(fit);
+        ++_rows_amount;
         break;
       }
     }
   }
-  return (fields.size() == 0);
+  if (fields.size() > 0) {
+    SetMessage("Invalid header!");
+    return false;
+  }
+  return true;
 }
 
 void VoidDataSource::ReleaseSource() {
@@ -117,14 +125,34 @@ bool VoidDataSource::GetRecord(Record *out) {
   if (not GetLine(_line, kLineSize) || _line[0] == 0) {
     return false;
   }
+  ++_rows_amount;
   std::string::size_type next;
   try {
     out->time  = std::stod(_line, &next);
     out->value = std::stod(_line + next);
   } catch (...) {
+    SetMessage("Failed to parse line #"
+      + boost::lexical_cast<std::string>(_rows_amount)
+    );
     return false;
   }
+  if (not std::isnan(_prev_time_label) &&
+      out->time < _prev_time_label) {
+    SetMessage("Invalid time label at line #"
+      + boost::lexical_cast<std::string>(_rows_amount)
+    );
+    return false;
+  }
+  _prev_time_label = out->time;
   return true;
+}
+
+const std::string& VoidDataSource::GetMessage() const {
+  return _message;
+}
+
+void VoidDataSource::SetMessage(const std::string &msg) {
+  _message = msg;
 }
 // class VoidDataSource::Header
 VoidDataSource::Header::Creator::Creator() {
@@ -178,6 +206,7 @@ FileDataSource::~FileDataSource() {
 bool FileDataSource::OccupySource() {
   _source.open(_file);
   if (not _source.is_open()) {
+    SetMessage("Failed to open file: " + _file);
     return false;
   }
   return VoidDataSource::OccupySource();

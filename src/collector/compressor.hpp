@@ -21,11 +21,17 @@ class Compressor {
 
     Compressor(uint32_t max_size);
     virtual ~Compressor();
-    virtual void PushRecord(Record &&new_rec);
+    virtual bool PushRecord(Record &&new_rec);
+    const std::string& GetMessage() const;
 
     const uint32_t         max_size;
     Record::List           records;
     Record::List::iterator record_it;
+  protected:
+    void SetMessage(const std::string &msg);
+  private:
+    size_t      _pushed_records;
+    std::string _message;
 };
 
 std::ostream& operator<< (std::ostream &s, const Compressor::Record::Range &rng);

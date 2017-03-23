@@ -1,6 +1,7 @@
 #include "compressor.hpp"
 #include <cmath>
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 
 std::ostream& operator<< (std::ostream &s, const Compressor::Record::Range &rng) {
   s << std::fixed << rng.first << " - " << std::fixed << rng.second;
@@ -59,32 +60,51 @@ bool Compressor::Record::MergeWith(const Record &src) {
 }
 // class Compressor
 Compressor::Compressor(uint32_t max_size)
-    : max_size(max_size) {
+    : max_size(max_size),
+      _pushed_records(0) {
 }
 
 Compressor::~Compressor() {
 }
 
-void Compressor::PushRecord(Record &&new_rec) {
+bool Compressor::PushRecord(Record &&new_rec) {
   const auto kAmountOfRecs = records.size();
   if (kAmountOfRecs < max_size) {
     records.push_back(new_rec);
     if (kAmountOfRecs == 1) {
       record_it = records.begin();
     }
-    return;
+    ++_pushed_records;
+    return true;
   }
+  bool was_merged = false;
   const auto kPrevRec = *record_it;
   record_it = records.erase(record_it);
   if (record_it != records.end()) {
-    record_it->MergeWith(kPrevRec);
+    was_merged = record_it->MergeWith(kPrevRec);
     ++record_it;
     if (record_it == records.end()) {
       record_it = records.begin();
     }
   } else {
-    new_rec.MergeWith(kPrevRec);
+    was_merged = new_rec.MergeWith(kPrevRec);
     record_it = records.begin();
   }
+  if (not was_merged) {
+    SetMessage("Failed to push record! Record #" 
+      + boost::lexical_cast<std::string>(_pushed_records)
+    );
+    return false;
+  }
   records.push_back(new_rec);
+  ++_pushed_records;
+  return true;
+}
+
+const std::string& Compressor::GetMessage() const {
+  return _message;
+}
+
+void Compressor::SetMessage(const std::string &msg) {
+  _message = msg;
 }

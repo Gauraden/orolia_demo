@@ -16,14 +16,19 @@ class VoidDataSource {
 
     const Header& GetHeader();
     bool GetRecord(Record *out);
+    const std::string& GetMessage() const;
   protected:
-    virtual bool GetLine(char *line, size_t max_len) = 0;   
-
+    virtual bool GetLine(char *line, size_t max_len) = 0;
+    void SetMessage(const std::string &msg);
+  private:
     static const size_t kLineSize = 256;
 
-    bool    _occupied;
-    Header *_header;
-    char    _line[kLineSize];
+    bool         _occupied;
+    Header      *_header;
+    char         _line[kLineSize];
+    std::string  _message;
+    uint32_t     _rows_amount;
+    double       _prev_time_label;
 };
 
 struct VoidDataSource::Header {

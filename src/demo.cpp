@@ -3,9 +3,10 @@
 #include <memory>
 #include <boost/program_options.hpp>
 #include "demo_gui.hpp"
+#include "collector/collector.hpp"
 
 static
-bool ParseProgramArguments(int arg_amount, char **arg_values) {
+bool ParseProgramArguments(int arg_amount, char **arg_values, Collector *out) {
   namespace po = boost::program_options;
   po::options_description desc("Demo program for OROLIA");
 	desc.add_options()
@@ -19,14 +20,34 @@ bool ParseProgramArguments(int arg_amount, char **arg_values) {
 	  std::cout << desc << std::endl;
 	  return false;
 	}
-
+  if (not vm.count("in")) {
+    std::cout << "You need to set <in> argument! Please look at <help>"
+              << std::endl;
+    return false;
+  }
+  try {
+    out->UseCompressor(new Compressor(1024));
+    out->UseDataSource(new FileDataSource(vm["in"].as<std::string>()));
+  } catch (...) {
+    return false;
+  }
   return true;
 }
 
 int main(int arg_amount, char **arg_values) {
-  if (not ParseProgramArguments(arg_amount, arg_values)) {
+  Collector cl;
+  if (not ParseProgramArguments(arg_amount, arg_values, &cl)) {
     return 0;
   }
   //CreateWindow(arg_amount, arg_values);
+  if (not cl.Begin()) {
+    std::cout << "Failed to init collector: " << cl.GetErrorMessage() << std::endl;
+    return 1;
+  }
+  if (not cl.FetchAllRecords()) {
+    std::cout << "Failed to fetch all records: " << cl.GetErrorMessage() << std::endl;
+    return 2;
+  }
+  cl.End();
   return 0;
 }
