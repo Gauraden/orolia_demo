@@ -54,6 +54,8 @@ struct VoidDataSource::Header {
 };
 
 struct VoidDataSource::Record {
+  Record();
+  Record(double time, double value);
   double time;
   double value;
 };

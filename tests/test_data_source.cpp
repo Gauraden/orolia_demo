@@ -1,10 +1,10 @@
-//#define empty() __empty() // cure of boost warning (speaking about shadow variable empty and the same method empty())
 #include <boost/test/unit_test.hpp>
 #include <sstream>
 #include <iostream>
 #include "../src/collector/data_source.hpp"
 
 struct DataSourceTestFixture {
+
     class TestSource: public VoidDataSource {
       public:
         TestSource(): VoidDataSource() {}
@@ -34,14 +34,14 @@ BOOST_AUTO_TEST_CASE(VoidDataSourceInvalidHeaderTest) {
 BOOST_AUTO_TEST_CASE(VoidDataSourceReadHeaderTest) {
   TestSource src;
   src.data
-  << "# Pendulum Instruments AB, TimeView32 V1.01" << std::endl
-  << "# FREqUENCY A" << std::endl
-  << "# MON May 12 13:13:23 2003" << std::endl
-  << "# Measuring time: 10 ms                       Single: Off" << std::endl
-  << "# Input A: Auto, 1M., AC, X1, Pos             Filter: Off" << std::endl
-  << "# Input B: Auto, 1M., AC, X1, Pos             Common: Off" << std::endl
-  << "# Ext.arm: Off                                Ref.osc: Internal" << std::endl
-  << "# Hold off: Off                               Statistics: Off"  << std::endl;
+    << "# Pendulum Instruments AB, TimeView32 V1.01" << std::endl
+    << "# FREqUENCY A" << std::endl
+    << "# MON May 12 13:13:23 2003" << std::endl
+    << "# Measuring time: 10 ms                       Single: Off" << std::endl
+    << "# Input A: Auto, 1M., AC, X1, Pos             Filter: Off" << std::endl
+    << "# Input B: Auto, 1M., AC, X1, Pos             Common: On" << std::endl
+    << "# Ext.arm: Off                                Ref.osc: Internal" << std::endl
+    << "# Hold off: Off                               Statistics: Off"  << std::endl;
   src.OccupySource();
   auto hd = src.GetHeader();
   BOOST_CHECK(hd.created_by.name     == "TimeView32");
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(VoidDataSourceReadHeaderTest) {
   BOOST_CHECK(hd.input_a == "Auto, 1M., AC, X1, Pos");
   BOOST_CHECK(not hd.filter);
   BOOST_CHECK(hd.input_b == "Auto, 1M., AC, X1, Pos");
-  BOOST_CHECK(not hd.common);
+  BOOST_CHECK(hd.common);
   BOOST_CHECK(not hd.ext_arm);
   BOOST_CHECK(hd.ref_osc == "Internal");
   BOOST_CHECK(not hd.hold_off);
@@ -63,8 +63,8 @@ BOOST_AUTO_TEST_CASE(VoidDataSourceReadHeaderTest) {
 BOOST_AUTO_TEST_CASE(VoidDataSourceReadRecordTest) {
   TestSource src;
   src.data
-  << "0.0000000000000e+000 9.8243659989561e+003" << std::endl
-  << "3.2334289000000e-001 1.0000635974181e+007" << std::endl;
+    << "0.0000000000000e+000 9.8243659989561e+003" << std::endl
+    << "3.2334289000000e-001 1.0000635974181e+007" << std::endl;
   VoidDataSource::Record rec;
   BOOST_CHECK(src.GetRecord(&rec));
   BOOST_CHECK(rec.time - 0.0000000000000e+000 < 0.0000000000001e+000);
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(VoidDataSourceReadRecordTest) {
 BOOST_AUTO_TEST_CASE(VoidDataSourceReadRecordFailTest) {
   TestSource src;
   src.data
-  << "0.0000000000000e+000 9.8243659989561e+003" << std::endl
-  << "3.233428900a000e-001 1.0000635974181e+007" << std::endl;
+    << "0.0000000000000e+000 9.8243659989561e+003" << std::endl
+    << "3.233428900a000e-001 1.0000635974181e+007" << std::endl;
   VoidDataSource::Record rec;
   BOOST_CHECK(src.GetRecord(&rec));
   BOOST_CHECK(rec.time - 0.0000000000000e+000 < 0.0000000000001e+000);

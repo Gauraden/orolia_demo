@@ -2,6 +2,7 @@
 #include <iostream>
 #include <list>
 #include <regex>
+#include <cmath>
 
 // class VoidDataSource
 VoidDataSource::VoidDataSource()
@@ -155,6 +156,15 @@ bool VoidDataSource::Header::IsValid() const {
     input_b.size() > 0 &&
     ref_osc.size() > 0
   );
+}
+// class VoidDataSource::Record
+VoidDataSource::Record::Record()
+    : time(std::nan("")),
+      value(std::nan("")) {
+}
+VoidDataSource::Record::Record(double time, double value)
+    : time(time),
+      value(value) {
 }
 // class FileDataSource
 FileDataSource::FileDataSource(const std::string &path)

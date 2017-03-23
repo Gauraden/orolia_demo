@@ -1,5 +1,6 @@
 add_executable(orolia_demo
   demo.cpp
+  demo_gui.cpp
 )
 
 add_subdirectory("collector")

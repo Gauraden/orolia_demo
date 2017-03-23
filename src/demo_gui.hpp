@@ -1,0 +1,1 @@
+void CreateWindow(int arg_amount, char **arg_values);
