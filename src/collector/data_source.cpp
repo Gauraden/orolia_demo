@@ -1,5 +1,4 @@
 #include "data_source.hpp"
-#include <iostream>
 #include <list>
 #include <regex>
 #include <cmath>
@@ -8,6 +7,7 @@
 // class VoidDataSource
 VoidDataSource::VoidDataSource()
     : _occupied(false),
+      _end_of_source(false),
       _header(new Header()),
       _rows_amount(0),
       _prev_time_label(std::nan("")) {
@@ -91,7 +91,7 @@ bool VoidDataSource::OccupySource() {
   Field::List fields;
   CreateFieldsHandlers(&fields);
   // reading header
-  while (fields.size() > 0 && GetLine(_line, kLineSize)) {
+  while (fields.size() > 0 && GetLine(_line, kLineSize) >= 0) {
     if (_line[0] != '#') {
       break;
     }
@@ -121,8 +121,14 @@ const VoidDataSource::Header& VoidDataSource::GetHeader() {
   return *_header;
 }
 
+bool VoidDataSource::IsAtTheEnd() const {
+  return _end_of_source;
+}
+
 bool VoidDataSource::GetRecord(Record *out) {
-  if (not GetLine(_line, kLineSize) || _line[0] == 0) {
+  const auto kGetLen = GetLine(_line, kLineSize);
+  if (kGetLen < 0 || _line[0] == 0) {
+    _end_of_source = true;
     return false;
   }
   ++_rows_amount;
@@ -131,9 +137,11 @@ bool VoidDataSource::GetRecord(Record *out) {
     out->time  = std::stod(_line, &next);
     out->value = std::stod(_line + next);
   } catch (...) {
-    SetMessage("Failed to parse line #"
-      + boost::lexical_cast<std::string>(_rows_amount)
-    );
+    if (kGetLen > 2) {
+      SetMessage("Failed to parse line #"
+        + boost::lexical_cast<std::string>(_rows_amount)
+      );
+    }
     return false;
   }
   if (not std::isnan(_prev_time_label) &&
@@ -212,12 +220,11 @@ bool FileDataSource::OccupySource() {
   return VoidDataSource::OccupySource();
 }
 
-bool FileDataSource::GetLine(char *line, size_t max_len) {
-  const bool kIsGood = _source.good();
-  if (kIsGood) {
-    _source.getline(line, max_len);
+int16_t FileDataSource::GetLine(char *line, uint8_t max_len) {
+  if (_source.good()) {
+    return _source.getline(line, max_len).gcount();
   }
-  return kIsGood;
+  return -1;
 }
 
 void FileDataSource::ReleaseSource() {

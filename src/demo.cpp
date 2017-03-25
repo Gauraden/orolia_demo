@@ -26,7 +26,7 @@ bool ParseProgramArguments(int arg_amount, char **arg_values, Collector *out) {
     return false;
   }
   try {
-    out->UseCompressor(new Compressor(1024));
+    out->UseCompressor(new Compressor(2000));
     out->UseDataSource(new FileDataSource(vm["in"].as<std::string>()));
   } catch (...) {
     return false;
@@ -34,20 +34,27 @@ bool ParseProgramArguments(int arg_amount, char **arg_values, Collector *out) {
   return true;
 }
 
+static
+void PrintCollectorMessages(const Collector::Messages &msgs) {
+  std::for_each(msgs.begin(), msgs.end(), [](const std::string &msg) {
+    std::cout << "\t - " << msg << std::endl;
+  });
+}
+
 int main(int arg_amount, char **arg_values) {
-  Collector cl;
+  Collector   cl;
+  GuiSettings gui_opts;
   if (not ParseProgramArguments(arg_amount, arg_values, &cl)) {
     return 0;
   }
-  //CreateWindow(arg_amount, arg_values);
-  if (not cl.Begin()) {
-    std::cout << "Failed to init collector: " << cl.GetErrorMessage() << std::endl;
+  if (not cl.Begin() || not cl.FetchAllRecords()) {
+    std::cout << "Failed to read records: " << std::endl;
+    PrintCollectorMessages(cl.GetMessages());
+    cl.End();
     return 1;
   }
-  if (not cl.FetchAllRecords()) {
-    std::cout << "Failed to fetch all records: " << cl.GetErrorMessage() << std::endl;
-    return 2;
-  }
   cl.End();
+  PrintCollectorMessages(cl.GetMessages());
+  CreateWindowWithChart(cl.GetCompressor(), gui_opts);
   return 0;
 }

@@ -9,12 +9,11 @@ struct DataSourceTestFixture {
       public:
         TestSource(): VoidDataSource() {}
         virtual ~TestSource() {}
-        virtual bool GetLine(char *line, size_t max_len) {
-          const bool kIsGood = data.good();
-          if (kIsGood) {
-            data.getline(line, max_len);
+        virtual int16_t GetLine(char *line, uint8_t max_len) {
+          if (data.good()) {
+            return data.getline(line, max_len).gcount();
           }
-          return kIsGood;
+          return -1;
         }
         std::stringstream data;
     };

@@ -1,3 +1,4 @@
+#include <cmath>
 #include "collector.hpp"
 
 Collector::Collector() {
@@ -23,28 +24,41 @@ bool Collector::GetDataHeader(VoidDataSource::Header *out) const {
   return true;
 }
 
+void Collector::RegisterMessage(const std::string &msg) {
+  if (not msg.empty()) {
+    _messages.emplace_back(msg);
+  }
+}
+
 bool Collector::Begin() {
-  return _source->OccupySource();
+  if (not _source->OccupySource()) {
+    RegisterMessage(_source->GetMessage());    
+    return false;
+  }
+  return true;
 }
 
 bool Collector::FetchAllRecords() {
   VoidDataSource::Record rec;
   bool push_ok = true;
-  while (_source->GetRecord(&rec) && push_ok) {
-    push_ok = _comp->PushRecord(rec);
+  while (not _source->IsAtTheEnd() && push_ok) {
+    if (_source->GetRecord(&rec)) {
+      push_ok = _comp->PushRecord(rec);
+    } else {
+      _comp->PushRecord({std::nan(""), std::nan("")});
+      RegisterMessage(_source->GetMessage());
+    }
   }
-  return push_ok && _source->GetMessage().empty();
+  if (not push_ok) {
+    RegisterMessage(_comp->GetMessage());
+  }
+  return push_ok;
 }
 
 void Collector::End() {
   _source->ReleaseSource();
 }
 
-std::string Collector::GetErrorMessage() const {
-  auto kSrcMessage  = _source->GetMessage();
-  auto kCompMessage = _comp->GetMessage();
-  if (not kSrcMessage.empty()) {
-    return kSrcMessage;   
-  }
-  return kCompMessage;
+const Collector::Messages& Collector::GetMessages() const {
+  return _messages;
 }

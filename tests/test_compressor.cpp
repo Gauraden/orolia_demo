@@ -106,14 +106,26 @@ BOOST_AUTO_TEST_CASE(CompressorPushTest) {
   for (size_t i = 0; i < kSrcAmount; ++i) {
     cr.PushRecord(src_recs[i]);
   }
-  size_t i   = 0;
-  auto   rit = cr.records.begin();
+  size_t i = 0;
+  auto records = cr.GetRecords();
+  auto rit     = records.begin();
   // 2 last records is not merged
-  for (; i < kResAmount - 2 && rit != cr.records.end(); ++i, ++rit) {
+  for (; i < kResAmount - 2 && rit != records.end(); ++i, ++rit) {
     BOOST_CHECK(CheckRec(*rit, res_recs[i]));
   }
-  BOOST_CHECK(rit != cr.records.end());
+  BOOST_CHECK(rit != records.end());
   BOOST_CHECK(i   == kResAmount - 2);
+}
+
+BOOST_AUTO_TEST_CASE(CompressorPrecalculateScalesTest) {
+  Compressor cpr(10);
+  cpr.PrecalculateScales({1, 10});
+  cpr.PrecalculateScales({2, 20});
+  Compressor::Range pt[2];
+  auto num = cpr.CastRecordToScales({1.5, 15}, pt);
+  BOOST_CHECK(num == 1);
+  BOOST_CHECK(pt[0].first  == 0.5);
+  BOOST_CHECK(pt[0].second == 0.5);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

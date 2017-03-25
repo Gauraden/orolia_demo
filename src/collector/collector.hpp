@@ -1,7 +1,11 @@
+#ifndef COLLECTOR_HPP
+#define COLLECTOR_HPP
+
 #include "compressor.hpp"
 
 class Collector {
   public:
+    typedef std::list<std::string> Messages;
     Collector();
 
     void UseCompressor(Compressor *ptr);
@@ -11,8 +15,11 @@ class Collector {
     bool Begin();
     bool FetchAllRecords();
     void End();
-    std::string GetErrorMessage() const;
+    const Messages& GetMessages() const;
   private:
+    void RegisterMessage(const std::string &msg);
     Compressor::ShrPtr     _comp;
     VoidDataSource::ShrPtr _source;
+    Messages               _messages;
 };
+#endif

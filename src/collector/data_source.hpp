@@ -1,3 +1,6 @@
+#ifndef DATA_SOURCE_HPP
+#define DATA_SOURCE_HPP
+
 #include <memory>
 #include <string>
 #include <fstream>
@@ -16,14 +19,16 @@ class VoidDataSource {
 
     const Header& GetHeader();
     bool GetRecord(Record *out);
+    bool IsAtTheEnd() const;
     const std::string& GetMessage() const;
   protected:
-    virtual bool GetLine(char *line, size_t max_len) = 0;
+    virtual int16_t GetLine(char *line, uint8_t max_len) = 0;
     void SetMessage(const std::string &msg);
   private:
-    static const size_t kLineSize = 256;
+    static const uint8_t kLineSize = 255;
 
     bool         _occupied;
+    bool         _end_of_source;
     Header      *_header;
     char         _line[kLineSize];
     std::string  _message;
@@ -69,10 +74,12 @@ class FileDataSource : public VoidDataSource {
   public:
     FileDataSource(const std::string &path);
     virtual ~FileDataSource();
+  protected:
     virtual bool OccupySource();
-    virtual bool GetLine(char *line, size_t max_len);
+    virtual int16_t GetLine(char *line, uint8_t max_len);
     virtual void ReleaseSource();
   private:
     std::string  _file;
     std::fstream _source;
 };
+#endif
