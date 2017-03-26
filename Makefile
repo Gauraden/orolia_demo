@@ -1,11 +1,14 @@
-OUTPUT_DIR = $(shell pwd)/output
+include Makefile.toolchain
 
-linux:
-	@echo "--- Building for OS GNU/Linux ---"
-	@mkdir -p ./build/linux ./output/linux
-	@cd ./build/linux && cmake -DCMAKE_INSTALL_PREFIX="${OUTPUT_DIR}/linux" ../../ && make install
+ROOT_DIR   = $(shell pwd)
+OUTPUT_DIR = $(ROOT_DIR)/output/$(*)
+BUILD_DIR  = $(ROOT_DIR)/build/$(*)
 
-win32:
-	@echo "--- Building for OS Windows -----"
-	@mkdir -p ./build/win32 ./output/win32
-	@cd ./build/win32 && cmake -DCMAKE_INSTALL_PREFIX="${OUTPUT_DIR}/win32" ../../ && make install
+CMAKE = $(ROOT_PATH)/usr/bin/$(TOOLS_PREFIX)cmake ../../ -DCMAKE_INSTALL_PREFIX="${OUTPUT_DIR}"
+
+all: target_linux_x86
+	
+target_%:
+	@echo "--- Сборка ($(*)) ---------------------------"
+	@mkdir -p $(BUILD_DIR) $(OUTPUT_DIR)
+	@cd $(BUILD_DIR) && $(CMAKE) && make install

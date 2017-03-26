@@ -1,11 +1,12 @@
 #include <boost/test/unit_test.hpp>
 #include <sstream>
 #include <iostream>
+#include <cmath>
 #include "../src/collector/compressor.hpp"
 
 struct CompressorTestFixture {
-    CompressorTestFixture() {}
-    ~CompressorTestFixture() {}
+  CompressorTestFixture() {}
+  ~CompressorTestFixture() {}
 };
 
 static
@@ -16,10 +17,10 @@ bool CheckRec(
     double                    val_f,
     double                    val_s) {
   return (
-    std::abs(rec.time.first   - tm_f ) < 0.1 &&
-    std::abs(rec.time.second  - tm_s ) < 0.1 &&
-    std::abs(rec.value.first  - val_f) < 0.1 &&
-    std::abs(rec.value.second - val_s) < 0.1
+    std::fabs(rec.time.first   - tm_f ) < 0.1 &&
+    std::fabs(rec.time.second  - tm_s ) < 0.1 &&
+    std::fabs(rec.value.first  - val_f) < 0.1 &&
+    std::fabs(rec.value.second - val_s) < 0.1
   );  
 }
 
@@ -28,10 +29,10 @@ bool CheckRec(
     const Compressor::Record &f_rec,
     const Compressor::Record &s_rec) {
   return (
-    std::abs(f_rec.time.first   - s_rec.time.first  ) < 0.1 &&
-    std::abs(f_rec.time.second  - s_rec.time.second ) < 0.1 &&
-    std::abs(f_rec.value.first  - s_rec.value.first ) < 0.1 &&
-    std::abs(f_rec.value.second - s_rec.value.second) < 0.1
+    std::fabs(f_rec.time.first   - s_rec.time.first  ) < 0.1 &&
+    std::fabs(f_rec.time.second  - s_rec.time.second ) < 0.1 &&
+    std::fabs(f_rec.value.first  - s_rec.value.first ) < 0.1 &&
+    std::fabs(f_rec.value.second - s_rec.value.second) < 0.1
   );
 }
 // -----------------------------------------------------------------------------

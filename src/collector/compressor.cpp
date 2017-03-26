@@ -1,5 +1,4 @@
 #include "compressor.hpp"
-#include <cmath>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 
@@ -104,6 +103,9 @@ bool Compressor::PushRecord(Record &&new_rec) {
   while (std::isnan(_record_it->time.first) ||
          std::isnan(std::next(_record_it)->time.first)) {
     prev_rec = *(++_record_it);
+    if (_record_it == _records.end()) {
+      _record_it = _records.begin();
+    }
   }
   _record_it = _records.erase(_record_it);
   if (_record_it != _records.end()) {

@@ -1,0 +1,7 @@
+ROOT_PATH_linux_x86 =
+ROOT_PATH_win_x86   = /media/denis/usb_hdd/git/mxe
+ROOT_PATH           = $(ROOT_PATH_$*)
+
+TOOLS_PREFIX_linux_x86 =
+TOOLS_PREFIX_win_x86   = i686-w64-mingw32.static-
+TOOLS_PREFIX           = $(TOOLS_PREFIX_$*)

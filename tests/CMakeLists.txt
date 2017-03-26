@@ -5,7 +5,7 @@ add_executable(units_tests
 )
 
 target_link_libraries(units_tests
-  boost_unit_test_framework
+  boost_unit_test_framework${BOOST_POSTFIX}
   collector
 )
 

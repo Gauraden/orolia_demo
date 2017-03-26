@@ -12,7 +12,9 @@ bool ParseProgramArguments(int arg_amount, char **arg_values, Collector *out) {
 	desc.add_options()
 		("help", "this description")
     ("in",   po::value<std::string>()->default_value(""),
-             "path to file with source data");
+             "path to file with source data")
+    ("bsize", po::value<unsigned>()->default_value(2000),
+             "size of buffer, for storing loaded records");
 	po::variables_map vm;
 	po::store(po::parse_command_line(arg_amount, arg_values, desc), vm);
 	po::notify(vm);
@@ -26,7 +28,10 @@ bool ParseProgramArguments(int arg_amount, char **arg_values, Collector *out) {
     return false;
   }
   try {
-    out->UseCompressor(new Compressor(2000));
+    std::cout << "Settings: \n"
+              << " * file  : " << vm["in"].as<std::string>() << ";\n"
+              << " * buffer: " << vm["bsize"].as<unsigned>() << " records;\n";
+    out->UseCompressor(new Compressor(vm["bsize"].as<unsigned>()));
     out->UseDataSource(new FileDataSource(vm["in"].as<std::string>()));
   } catch (...) {
     return false;
@@ -47,6 +52,7 @@ int main(int arg_amount, char **arg_values) {
   if (not ParseProgramArguments(arg_amount, arg_values, &cl)) {
     return 0;
   }
+  std::cout << "Loading records ..." << std::endl;
   if (not cl.Begin() || not cl.FetchAllRecords()) {
     std::cout << "Failed to read records: " << std::endl;
     PrintCollectorMessages(cl.GetMessages());
@@ -54,6 +60,7 @@ int main(int arg_amount, char **arg_values) {
     return 1;
   }
   cl.End();
+  std::cout << "Drawing graph ... " << std::endl;
   PrintCollectorMessages(cl.GetMessages());
   CreateWindowWithChart(cl.GetCompressor(), gui_opts);
   return 0;

@@ -127,7 +127,7 @@ bool VoidDataSource::IsAtTheEnd() const {
 
 bool VoidDataSource::GetRecord(Record *out) {
   const auto kGetLen = GetLine(_line, kLineSize);
-  if (kGetLen < 0 || _line[0] == 0) {
+  if (kGetLen < 0) {
     _end_of_source = true;
     return false;
   }
@@ -222,7 +222,8 @@ bool FileDataSource::OccupySource() {
 
 int16_t FileDataSource::GetLine(char *line, uint8_t max_len) {
   if (_source.good()) {
-    return _source.getline(line, max_len).gcount();
+    const auto kGCount = _source.getline(line, max_len).gcount();
+    return kGCount;
   }
   return -1;
 }

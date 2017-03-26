@@ -4,9 +4,13 @@ project("orolia_demo")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules (GTKMM REQUIRED gtkmm-3.0)
 
+if (WIN32)
+  set(BOOST_POSTFIX '-mt')
+endif ()
+
 add_definitions(
   -static
-  --std=gnu++0x
+  --std=gnu++14
   -Wunused-parameter
   -Wnon-virtual-dtor
   -Wignored-qualifiers

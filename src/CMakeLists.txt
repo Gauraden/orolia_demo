@@ -7,7 +7,7 @@ add_subdirectory("collector")
 
 target_link_libraries(orolia_demo
   ${GTKMM_LIBRARIES}
-  boost_program_options
+  boost_program_options${BOOST_POSTFIX}
   collector
 )
 
