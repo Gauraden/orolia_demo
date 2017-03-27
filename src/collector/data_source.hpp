@@ -73,7 +73,6 @@ struct VoidDataSource::Record {
 class FileDataSource : public VoidDataSource {
   public:
     FileDataSource(const std::string &path);
-    virtual ~FileDataSource();
   protected:
     virtual bool OccupySource();
     virtual int16_t GetLine(char *line, uint8_t max_len);

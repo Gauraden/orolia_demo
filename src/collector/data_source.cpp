@@ -208,9 +208,6 @@ FileDataSource::FileDataSource(const std::string &path)
       _file(path) {
 }
 
-FileDataSource::~FileDataSource() {
-}
-
 bool FileDataSource::OccupySource() {
   _source.open(_file);
   if (not _source.is_open()) {
@@ -222,8 +219,7 @@ bool FileDataSource::OccupySource() {
 
 int16_t FileDataSource::GetLine(char *line, uint8_t max_len) {
   if (_source.good()) {
-    const auto kGCount = _source.getline(line, max_len).gcount();
-    return kGCount;
+    return _source.getline(line, max_len).gcount();
   }
   return -1;
 }

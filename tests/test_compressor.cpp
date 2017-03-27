@@ -97,11 +97,11 @@ BOOST_AUTO_TEST_CASE(CompressorPushTest) {
     {9, 14}
   };
   Compressor::Record res_recs[kResAmount] = {
-    {{0, 3 }, {1, 11}},
+    {{0, 1 }, {1, 10}},
+    {{2, 3 }, {2, 11}},
     {{4, 5 }, {3, 12}},
     {{6, 7 }, {4, 13}},
-    {8, 5},
-    {9, 14}
+    {{8, 9 }, {5, 14}}
   };
   Compressor cr(kResAmount);
   for (size_t i = 0; i < kSrcAmount; ++i) {
@@ -110,12 +110,11 @@ BOOST_AUTO_TEST_CASE(CompressorPushTest) {
   size_t i = 0;
   auto records = cr.GetRecords();
   auto rit     = records.begin();
-  // 2 last records is not merged
-  for (; i < kResAmount - 2 && rit != records.end(); ++i, ++rit) {
+  for (; i < kResAmount && rit != records.end(); ++i, ++rit) {
     BOOST_CHECK(CheckRec(*rit, res_recs[i]));
   }
-  BOOST_CHECK(rit != records.end());
-  BOOST_CHECK(i   == kResAmount - 2);
+  BOOST_CHECK(rit == records.end());
+  BOOST_CHECK(i   == kResAmount);
 }
 
 BOOST_AUTO_TEST_CASE(CompressorPrecalculateScalesTest) {

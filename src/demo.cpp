@@ -13,7 +13,7 @@ bool ParseProgramArguments(int arg_amount, char **arg_values, Collector *out) {
 		("help", "this description")
     ("in",   po::value<std::string>()->default_value(""),
              "path to file with source data")
-    ("bsize", po::value<unsigned>()->default_value(2000),
+    ("bsize", po::value<unsigned>()->default_value(800),
              "size of buffer, for storing loaded records");
 	po::variables_map vm;
 	po::store(po::parse_command_line(arg_amount, arg_values, desc), vm);

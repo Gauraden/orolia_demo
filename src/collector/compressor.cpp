@@ -16,17 +16,23 @@ std::ostream& operator<< (std::ostream &s, const Compressor::Record &rec) {
 // class Compressor::Record
 Compressor::Record::Record(double time, double value)
     : time(time, std::nan("")),
-      value(value, std::nan("")) {
+      value(value, std::nan("")),
+      amount(1) {
 }
 
 Compressor::Record::Record(const Range &time, const Range &value)
     : time(time),
-      value(value) {
+      value(value),
+      amount(1) {
+  if (not std::isnan(time.second)) {
+    ++amount;
+  }
 }
 
 Compressor::Record::Record(const VoidDataSource::Record &rec)
     : time(rec.time, std::nan("")),
-      value(rec.value, std::nan("")) {
+      value(rec.value, std::nan("")),
+      amount(1) {
 }
 
 static
@@ -43,8 +49,18 @@ bool Compressor::Record::MergeWith(const Record &src) {
      ) {
     return false;
   }
+  // extending "time" range with values from "src"
+  // if we are here, it means that "src" "time" range < this "time" range. 
+  // this "time" [5, 6]; "src" "time" [3, 4]
+  // Swap        [5, 6]; "src" "time" [3, 4] nothing was changed, because 5 < 6
+  // copy        [3, 6]; ...
   SwapIfGreater(time.second, time.first);
   time.first = src.time.first;
+  // extending "value" range with values from "src"
+  // if "src" "value" < this "value"
+  // this "value" [7, 8]; "src" "value" [1, 2]
+  // Swap         [7, 8]; ... nothing was changed, because 7 < 8
+  // copy         [1, 8]; ...
   if (src.value.first < value.first) {
     SwapIfGreater(value.second, value.first);
     value.first = src.value.first;
@@ -53,14 +69,18 @@ bool Compressor::Record::MergeWith(const Record &src) {
   if (std::isnan(t_sec)) {
     t_sec = src.value.first;
   }
+  // additional checks for making range valid, it is when first
+  // element is lesser than second
   SwapIfGreater(value.second, t_sec);
   SwapIfGreater(value.second, value.first);
+  amount += src.amount;
   return true;
 }
 // class Compressor
 Compressor::Compressor(uint32_t max_size)
     : _max_size(max_size),
       _pushed_records(0),
+      _rec_capacity(1),
       _time_scale(std::nan(""), std::nan("")),
       _value_scale(std::nan(""), std::nan("")) {
 }
@@ -72,7 +92,7 @@ void Compressor::PrecalculateScales(const Record &rec) {
   ++_pushed_records;
   if (std::isnan(_time_scale.first) || 
       rec.time.first < _time_scale.first) {
-    _time_scale.first = rec.time.first;
+     _time_scale.first = rec.time.first;
   }
   if (std::isnan(_time_scale.second) ||
       rec.time.first > _time_scale.second) {
@@ -91,6 +111,7 @@ void Compressor::PrecalculateScales(const Record &rec) {
 bool Compressor::PushRecord(Record &&new_rec) {
   PrecalculateScales(new_rec);
   const auto kAmountOfRecs = _records.size();
+  // simple filling in buffer, until it reach limit
   if (kAmountOfRecs < _max_size) {
     _records.push_back(new_rec);
     if (kAmountOfRecs == 1) {
@@ -100,23 +121,34 @@ bool Compressor::PushRecord(Record &&new_rec) {
   }
   bool was_merged = false;
   auto prev_rec   = *_record_it;
-  while (std::isnan(_record_it->time.first) ||
-         std::isnan(std::next(_record_it)->time.first)) {
-    prev_rec = *(++_record_it);
-    if (_record_it == _records.end()) {
-      _record_it = _records.begin();
-    }
-  }
+  bool select_last_pushed = false;
+  // if size of buffer is equal to limit,
+  // we need to free some space, for new records
   _record_it = _records.erase(_record_it);
   if (_record_it != _records.end()) {
+    // if current position in buffer is not at the end,
+    // we will merge two nearest records into one. Until its
+    // capacity will not reach global value "_rec_capacity"
     was_merged = _record_it->MergeWith(prev_rec);
-    ++_record_it;
+    if (_record_it->amount > _rec_capacity) {
+      _rec_capacity = _record_it->amount;
+    }
+    if (_record_it->amount == _rec_capacity) {
+      ++_record_it;
+    }
     if (_record_it == _records.end()) {
-      _record_it = _records.begin();
+      select_last_pushed = true;
     }
   } else {
+    // doing same at the end of buffer,
+    // and moving "compress" iterator to the beginning, when
+    // there are no space for merging at the end
     was_merged = new_rec.MergeWith(prev_rec);
-    _record_it = _records.begin();
+    if (new_rec.amount == _rec_capacity) {
+      _record_it = _records.begin();
+    } else {
+      select_last_pushed = true;
+    }
   }
   if (not was_merged) {
     SetMessage("Failed to push record! Record #" 
@@ -125,6 +157,9 @@ bool Compressor::PushRecord(Record &&new_rec) {
     return false;
   }
   _records.push_back(new_rec);
+  if (select_last_pushed) {
+    _record_it = --_records.end();
+  }
   return true;
 }
 

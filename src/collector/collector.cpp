@@ -44,9 +44,6 @@ bool Collector::FetchAllRecords() {
   while (not _source->IsAtTheEnd() && push_ok) {
     if (_source->GetRecord(&rec)) {
       push_ok = _comp->PushRecord(rec);
-    } else {
-      _comp->PushRecord({std::nan(""), std::nan("")});
-      RegisterMessage(_source->GetMessage());
     }
   }
   if (not push_ok) {
